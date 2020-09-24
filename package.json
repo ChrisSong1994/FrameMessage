@@ -1,0 +1,40 @@
+{
+  "name": "framemessage",
+  "version": "0.0.1",
+  "description": "iframe message better ",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "npm run clean && rollup -w -c  --environment NODE_ENV:development",
+    "build": "npm run clean && rollup  -c  --environment NODE_ENV:production",
+    "clean": "rm -rf ./dist ./es ",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/song111/FrameMessage.git"
+  },
+  "keywords": [
+    "iframe",
+    "message",
+    "postMessage"
+  ],
+  "author": "chrissong",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/song111/FrameMessage/issues"
+  },
+  "homepage": "https://github.com/song111/FrameMessage#readme",
+  "devDependencies": {
+    "@types/uuid": "^8.3.0",
+    "@typescript-eslint/eslint-plugin": "^4.2.0",
+    "@typescript-eslint/parser": "^4.2.0",
+    "eslint": "^7.9.0",
+    "rollup": "^2.28.1",
+    "rollup-plugin-eslint": "^7.0.0",
+    "rollup-plugin-typescript2": "^0.27.2",
+    "typescript": "^4.0.3"
+  },
+  "dependencies": {
+    "uuid": "^8.3.0"
+  }
+}
