@@ -1,5 +1,5 @@
 import { TaskId } from "./types";
-import { generateUid } from './utils';
+import { generateUid } from "./utils";
 
 export enum STATUS {
   success = "success",

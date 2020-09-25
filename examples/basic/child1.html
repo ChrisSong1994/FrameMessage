@@ -9,14 +9,14 @@
       .child {
         width: 100%;
         height: 100%;
-        background-color: cornflowerblue;
+        background-color: #ffe4b5;
       }
     </style>
   </head>
   <body>
     <div class="child">我是child1</div>
     <button onclick="handleChangeTheme()">修改主题</button>
-    <script src="../dist/index.js"></script>
+    <script src="../../dist/index.js"></script>
     <script>
       const { Client } = frameMessage;
       const client = new Client(window.parent);
@@ -24,7 +24,7 @@
       function handleChangeTheme() {
         debugger;
         client
-          .request("CHANGE_BG_COLOR", { color: "red" })
+          .request("CHANGE_BG_COLOR", { color: "#FFE4B5" })
           .then((res) => {
             debugger;
             console.log(res);

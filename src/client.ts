@@ -1,4 +1,4 @@
-import { Self, MessageType, MessageListener, TaskMap } from "./types";
+import { Self, MessageType, MessageListener, TasksMap } from "./types";
 import { isNative, warn, noop } from "./utils";
 import { Request, Response, Task, STATUS } from "./reaction";
 
@@ -10,7 +10,7 @@ export default class Client {
   target: Self;
   origin: string;
   self: Self;
-  tasks: TaskMap<string, Task>;
+  tasks: TasksMap<string, Task>;
   private _msgListener: MessageListener;
 
   constructor(target: Self, origin: string = "*", option: ClientOption = {}) {
@@ -19,7 +19,7 @@ export default class Client {
     this.self = option.self ?? self;
     this.tasks = Object.create(null);
     this._msgListener = noop;
-    this.open()
+    this.open();
 
     // target 必须是带有原生window.postmessage方法
     if (!isNative(target.postMessage)) {
@@ -29,13 +29,16 @@ export default class Client {
     }
   }
 
-  /**
-   * 开启Client
-   */
+  // 开启Client端监听
   open() {
     this._msgListener = this._receiver.bind(this);
-    debugger
     this.self.addEventListener("message", this._msgListener);
+  }
+
+  // 关闭Client端监听
+  close() {
+    this.self.removeEventListener("message", this._msgListener);
+    this._msgListener = noop;
   }
 
   /**触发监听，发布postmessage 事件
@@ -44,7 +47,7 @@ export default class Client {
    * @param {string} origin
    * @returns {Promise}  Promise 响应结果
    */
-  request(type: MessageType, data: any, origin?: string) {
+  request(type: MessageType, data: any, origin?: string): Promise<any> {
     debugger;
 
     const req = new Request({ type, data });
@@ -59,9 +62,9 @@ export default class Client {
       warn("The return value of requestInterceptor must be a valid request");
       return Promise.reject(req);
     }
-
     return new Promise((resolve, reject) => {
-      this.target.postMessage(req, origin);
+      // this.target.postMessage(req, origin);
+      window.parent.postMessage(req, origin);
       this.tasks[req._id] = new Task(req, null, resolve, reject);
     });
   }
@@ -70,9 +73,9 @@ export default class Client {
    * @param {MessageEvent} event
    * */
   private _receiver(event: MessageEvent) {
-    debugger
+    debugger;
     if (!Response.isResponse(event.data)) return;
-    const { type, _id } = event.data;
+    const { _id } = event.data;
     const task = this.tasks[_id];
     if (!task) return;
 

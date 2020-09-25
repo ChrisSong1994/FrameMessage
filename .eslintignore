@@ -1,10 +1,7 @@
 .DS_Store
 /.idea
-
-
 dist/
-lib/
 es/
 node_modules/
-example/
+examples/
 types/

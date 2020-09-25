@@ -1,5 +1,3 @@
-import { MessageType } from "./types";
-
 export const WILDCARD = "*"; // 通配符
 
 // 判断是否是window 原生函数
@@ -14,9 +12,7 @@ export function warn(...log: any[]) {
   print(...log);
 }
 
-// 生成唯一id
+// 生成id
 export function generateUid() {
-  return Number(
-    Math.random().toString().substr(3, length) + Date.now()
-  ).toString(36);
+  return Number(Math.floor(Math.random() * 1000000) + Date.now()).toString(36);
 }
