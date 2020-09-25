@@ -69,7 +69,8 @@ export default class Server {
   /** 接收事件信息并处理
    * @param {MessageEvent} event
    */
-  private _receiver(event: MessageEvent) {
+  private async _receiver(event: MessageEvent) {
+    // eslint-disable-next-line no-debugger
     debugger;
     const { type, data, _id } = event.data;
     const req = new Request({ type, data, id: _id });
@@ -81,13 +82,13 @@ export default class Server {
 
     let index = 0;
 
-    const next = async (error?: any) => {
+    const next = async () => {
       const handler = handlers[index++];
       if (handler) {
-        handler.fn(req, res, next); // 执行完毕需要可以返回数据
+        await handler.fn(req, res, next); // 执行完毕需要可以返回数据
       }
     };
 
-    next();
+    await next();
   }
 }

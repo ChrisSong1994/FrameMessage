@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 import { Self, MessageType, MessageListener, TasksMap } from "./types";
 import { isNative, warn, noop } from "./utils";
 import { Request, Response, Task, STATUS } from "./reaction";
@@ -13,7 +14,7 @@ export default class Client {
   tasks: TasksMap<string, Task>;
   private _msgListener: MessageListener;
 
-  constructor(target: Self, origin: string = "*", option: ClientOption = {}) {
+  constructor(target: Self, origin = "*", option: ClientOption = {}) {
     this.target = target;
     this.origin = origin;
     this.self = option.self ?? self;
@@ -30,6 +31,7 @@ export default class Client {
   }
 
   // 开启Client端监听
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   open() {
     this._msgListener = this._receiver.bind(this);
     this.self.addEventListener("message", this._msgListener);
@@ -63,8 +65,7 @@ export default class Client {
       return Promise.reject(req);
     }
     return new Promise((resolve, reject) => {
-      // this.target.postMessage(req, origin);
-      window.parent.postMessage(req, origin);
+      this.target.postMessage(req, origin);
       this.tasks[req._id] = new Task(req, null, resolve, reject);
     });
   }
@@ -79,7 +80,7 @@ export default class Client {
     const task = this.tasks[_id];
     if (!task) return;
 
-    let res = new Response(event.data); // 根据接收信息生成一个响应对象
+    const res = new Response(event.data); // 根据接收信息生成一个响应对象
     task.res = res;
     if (res.status === STATUS.success) {
       task.resolve(res);

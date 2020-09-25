@@ -23,6 +23,7 @@ export default class Responsable {
       const status = isSuccess ? STATUS.success : STATUS.failure;
       const res = new Response({ type, data, status, id: _id });
       debugger;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.event.source.postMessage(res, "*");
       this.anwsered = true;

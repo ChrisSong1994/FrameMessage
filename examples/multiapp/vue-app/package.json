@@ -1,0 +1,44 @@
+{
+  "name": "vue-app",
+  "version": "1.0.0",
+  "description": "vue 开发项目搭建脚手架",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build/build.js",
+    "start": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/song111/vue-init-app.git"
+  },
+  "author": "songjun",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/song111/vue-init-app/issues"
+  },
+  "homepage": "https://github.com/song111/vue-init-app#readme",
+  "devDependencies": {
+    "autodll-webpack-plugin": "^0.4.2",
+    "autoprefixer": "^9.5.1",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
+    "babel-preset-env": "^1.7.0",
+    "clean-webpack-plugin": "^2.0.2",
+    "css-loader": "^2.1.1",
+    "html-webpack-plugin": "^3.2.0",
+    "mini-css-extract-plugin": "^0.6.0",
+    "postcss-loader": "^3.0.0",
+    "vue-loader": "^15.7.0",
+    "vue-style-loader": "^4.1.2",
+    "vue-template-compiler": "^2.6.10",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.4.1",
+    "webpack-merge": "^4.2.1"
+  },
+  "dependencies": {
+    "vue": "^2.6.10",
+    "vue-router": "^3.0.6",
+    "vuex": "^3.1.1"
+  }
+}

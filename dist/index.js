@@ -72,9 +72,11 @@
     }
 
     // 判断是否是window 原生函数
+    // eslint-disable-next-line @typescript-eslint/ban-types
     var isNative = function (fn) {
         return /\[native code\]/.test(fn.toString());
     };
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     function noop() { }
     function warn() {
         var _a;
@@ -85,7 +87,7 @@
         var print = (_a = console.warn) !== null && _a !== void 0 ? _a : console.log;
         print.apply(void 0, log);
     }
-    // 生成唯一id
+    // 生成id
     function generateUid() {
         return Number(Math.floor(Math.random() * 1000000) + Date.now()).toString(36);
     }
@@ -179,6 +181,7 @@
                 var status_1 = isSuccess ? STATUS.success : STATUS.failure;
                 var res = new Response({ type: type, data: data, status: status_1, id: _id });
                 debugger;
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 this.event.source.postMessage(res, "*");
                 this.anwsered = true;
@@ -237,26 +240,43 @@
          * @param {MessageEvent} event
          */
         Server.prototype._receiver = function (event) {
-            var _this = this;
-            debugger;
-            var _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
-            var req = new Request({ type: type, data: data, id: _id });
-            var res = new Responsable(req, event);
-            var handlers = this.handlers.filter(function (handler) {
-                return handler.type === type;
-            });
-            var index = 0;
-            var next = function (error) { return __awaiter(_this, void 0, void 0, function () {
-                var handler;
-                return __generator(this, function (_a) {
-                    handler = handlers[index++];
-                    if (handler) {
-                        handler.fn(req, res, next); // 执行完毕需要可以返回数据
+            return __awaiter(this, void 0, void 0, function () {
+                var _a, type, data, _id, req, res, handlers, index, next;
+                var _this = this;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            // eslint-disable-next-line no-debugger
+                            debugger;
+                            _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
+                            req = new Request({ type: type, data: data, id: _id });
+                            res = new Responsable(req, event);
+                            handlers = this.handlers.filter(function (handler) {
+                                return handler.type === type;
+                            });
+                            index = 0;
+                            next = function () { return __awaiter(_this, void 0, void 0, function () {
+                                var handler;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            handler = handlers[index++];
+                                            if (!handler) return [3 /*break*/, 2];
+                                            return [4 /*yield*/, handler.fn(req, res, next)];
+                                        case 1:
+                                            _a.sent(); // 执行完毕需要可以返回数据
+                                            _a.label = 2;
+                                        case 2: return [2 /*return*/];
+                                    }
+                                });
+                            }); };
+                            return [4 /*yield*/, next()];
+                        case 1:
+                            _b.sent();
+                            return [2 /*return*/];
                     }
-                    return [2 /*return*/];
                 });
-            }); };
-            next();
+            });
         };
         return Server;
     }());
@@ -278,6 +298,7 @@
             }
         }
         // 开启Client端监听
+        // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
         Client.prototype.open = function () {
             this._msgListener = this._receiver.bind(this);
             this.self.addEventListener("message", this._msgListener);
@@ -308,8 +329,7 @@
                 return Promise.reject(req);
             }
             return new Promise(function (resolve, reject) {
-                // this.target.postMessage(req, origin);
-                window.parent.postMessage(req, origin);
+                _this.target.postMessage(req, origin);
                 _this.tasks[req._id] = new Task(req, null, resolve, reject);
             });
         };
@@ -342,3 +362,4 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+//# sourceMappingURL=index.js.map
