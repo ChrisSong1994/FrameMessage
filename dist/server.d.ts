@@ -16,18 +16,12 @@ export default class Server {
     self: Self;
     handlers: Handler[];
     errorHandler: ErrorHandler;
+    private notFoundErrorHandler;
     private _msgListener;
     constructor(option?: ServerOption);
     open(): void;
     close(): void;
-    /** 注册监听事件
-     * @param {MessageType} type
-     * @param {HandlerFn} handler
-     */
     listen(type: MessageType, handler: HandlerFn): void;
-    /** 接收事件信息并处理
-     * @param {MessageEvent} event
-     */
     private _receiver;
 }
 export {};

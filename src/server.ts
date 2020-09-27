@@ -4,7 +4,8 @@ import { Request } from "./reaction";
 import Responsable from "./responsable";
 
 type HandlerFn = (req: Request, res: Responsable, next: Next) => Promise<any>;
-type ErrorHandler = (err: any, req: Request, res: Responsable) => void;
+type ErrorHandler = (err: any, req: Request, res: Responsable) => void; // 错误处理
+type NotFoundErrorHandler = (req: Request, res: Responsable) => void; // 404 处理
 interface ServerOption {
   self?: Self;
   errorHandler?: ErrorHandler;
@@ -21,14 +22,20 @@ class Handler {
 // 默认失败执行函数
 const defaultErrorHandler: ErrorHandler = (err, _req, res) => {
   if (!res.anwsered) {
-    res.respond(err, false);
+    res.error(err);
   }
+};
+
+// 404 失败执行函数
+const notFoundErrorHandler: NotFoundErrorHandler = (req, res) => {
+  res.error(`the type of ${req.data.type} has not been found`);
 };
 
 export default class Server {
   self: Self;
   handlers: Handler[];
   errorHandler: ErrorHandler;
+  private notFoundErrorHandler: NotFoundErrorHandler;
   private _msgListener: MessageListener;
 
   constructor(option: ServerOption = {}) {
@@ -36,6 +43,7 @@ export default class Server {
     this.handlers = []; // 执行函数集合
     this._msgListener = noop;
     this.errorHandler = option.errorHandler ?? defaultErrorHandler;
+    this.notFoundErrorHandler = notFoundErrorHandler;
 
     if (!isNative(this.self.postMessage)) {
       throw new TypeError(
@@ -81,11 +89,16 @@ export default class Server {
     });
 
     let index = 0;
-
     const next = async () => {
       const handler = handlers[index++];
       if (handler) {
-        await handler.fn(req, res, next); // 执行完毕需要可以返回数据
+        try {
+          await handler.fn(req, res, next); // 执行完毕需要可以返回数据
+        } catch (err) {
+          this.errorHandler(err, req, res);
+        }
+      } else {
+        this.notFoundErrorHandler(req, res);
       }
     };
 

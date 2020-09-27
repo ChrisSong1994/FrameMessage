@@ -15,16 +15,16 @@
   </head>
   <body>
     <div class="child">我是child2</div>
-    <button onclick="handleChangeTheme()">修改主题</button>
+    <button onclick="handleChangeTheme()">错误请求</button>
     <script src="../../dist/index.js"></script>
     <script>
-      const { Client } = frameMessage;
+      const { Client, Server } = frameMessage;
       const client = new Client(window.parent);
 
       function handleChangeTheme() {
         debugger;
         client
-          .request("CHANGE_BG_COLOR", { color: "#1E90FF" })
+          .request("CHANGE_BG_COLOR11", { color: "#1E90FF" })
           .then((res) => {
             debugger;
             console.log(res);

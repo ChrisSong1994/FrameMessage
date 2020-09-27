@@ -1,9 +1,10 @@
+/* eslint-disable no-undef */
 import typescript from "rollup-plugin-typescript2";
 import { eslint } from "rollup-plugin-eslint";
 
 const isDev = process.env.NODE_ENV === "development";
 
-console.log(isDev,process.env.NODE_ENV)
+console.log(isDev, process.env.NODE_ENV);
 
 const config = {
   input: "./src/index.ts",

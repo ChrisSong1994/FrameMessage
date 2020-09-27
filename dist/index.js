@@ -71,12 +71,9 @@
         }
     }
 
-    // 判断是否是window 原生函数
-    // eslint-disable-next-line @typescript-eslint/ban-types
     var isNative = function (fn) {
         return /\[native code\]/.test(fn.toString());
     };
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     function noop() { }
     function warn() {
         var _a;
@@ -87,7 +84,6 @@
         var print = (_a = console.warn) !== null && _a !== void 0 ? _a : console.log;
         print.apply(void 0, log);
     }
-    // 生成id
     function generateUid() {
         return Number(Math.floor(Math.random() * 1000000) + Date.now()).toString(36);
     }
@@ -102,7 +98,7 @@
         REACTION_TYPE["request"] = "reaction_request";
         REACTION_TYPE["response"] = "reaction_response";
     })(REACTION_TYPE || (REACTION_TYPE = {}));
-    var Reaction = /** @class */ (function () {
+    var Reaction = (function () {
         function Reaction(_reactType, _id, type, data) {
             if (_id === void 0) { _id = generateUid(); }
             if (data === void 0) { data = null; }
@@ -117,21 +113,18 @@
         }
         return Reaction;
     }());
-    // 响应请求
-    var Request = /** @class */ (function (_super) {
+    var Request = (function (_super) {
         __extends(Request, _super);
         function Request(_a) {
             var type = _a.type, id = _a.id, data = _a.data;
             return _super.call(this, REACTION_TYPE.request, id, type, data) || this;
         }
-        // 是否请求实例
         Request.isRequest = function (req) {
             return req._reactType === REACTION_TYPE.request;
         };
         return Request;
     }(Reaction));
-    // 响应返回
-    var Response = /** @class */ (function (_super) {
+    var Response = (function (_super) {
         __extends(Response, _super);
         function Response(_a) {
             var type = _a.type, id = _a.id, data = _a.data, status = _a.status;
@@ -144,8 +137,7 @@
         };
         return Response;
     }(Reaction));
-    // client响应任务
-    var Task = /** @class */ (function () {
+    var Task = (function () {
         function Task(req, res, resolve, reject) {
             this.req = req;
             this.res = res;
@@ -159,8 +151,7 @@
         return Task;
     }());
 
-    // Server端响应
-    var Responsable = /** @class */ (function () {
+    var Responsable = (function () {
         function Responsable(_request, event) {
             this._request = _request;
             this.event = event;
@@ -168,21 +159,24 @@
             this.event = event;
             this.anwsered = false;
         }
-        /**
-         * 响应客户端消息
-         * @param data 相应数据
-         * @param isSuccess 是否成功标识
-         */
-        Responsable.prototype.respond = function (data, isSuccess) {
+        Responsable.prototype.success = function (data) {
             if (this.anwsered)
                 return warn("this request has been anwsered");
             if (this.event.source) {
                 var _a = this._request, type = _a.type, _id = _a._id;
-                var status_1 = isSuccess ? STATUS.success : STATUS.failure;
-                var res = new Response({ type: type, data: data, status: status_1, id: _id });
+                var res = new Response({ type: type, data: data, status: STATUS.success, id: _id });
                 debugger;
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
+                this.event.source.postMessage(res, "*");
+                this.anwsered = true;
+            }
+        };
+        Responsable.prototype.error = function (data) {
+            if (this.anwsered)
+                return warn("this request has been anwsered");
+            if (this.event.source) {
+                var _a = this._request, type = _a.type, _id = _a._id;
+                var res = new Response({ type: type, data: data, status: STATUS.failure, id: _id });
+                debugger;
                 this.event.source.postMessage(res, "*");
                 this.anwsered = true;
             }
@@ -190,8 +184,7 @@
         return Responsable;
     }());
 
-    // 执行函数
-    var Handler = /** @class */ (function () {
+    var Handler = (function () {
         function Handler(type, fn) {
             this.type = type;
             this.fn = fn;
@@ -200,45 +193,39 @@
         }
         return Handler;
     }());
-    // 默认失败执行函数
     var defaultErrorHandler = function (err, _req, res) {
         if (!res.anwsered) {
-            res.respond(err, false);
+            res.error(err);
         }
     };
-    var Server = /** @class */ (function () {
+    var notFoundErrorHandler = function (req, res) {
+        res.error("the type of " + req.data.type + " has not been found");
+    };
+    var Server = (function () {
         function Server(option) {
             if (option === void 0) { option = {}; }
             var _a, _b;
             this.self = (_a = option.self) !== null && _a !== void 0 ? _a : self;
-            this.handlers = []; // 执行函数集合
+            this.handlers = [];
             this._msgListener = noop;
             this.errorHandler = (_b = option.errorHandler) !== null && _b !== void 0 ? _b : defaultErrorHandler;
+            this.notFoundErrorHandler = notFoundErrorHandler;
             if (!isNative(this.self.postMessage)) {
                 throw new TypeError("`self` parameter must contain native `postMessage` method");
             }
             this.open();
         }
-        // 开启Server端监听
         Server.prototype.open = function () {
             this._msgListener = this._receiver.bind(this);
             this.self.addEventListener("message", this._msgListener);
         };
-        // 关闭Server端监听
         Server.prototype.close = function () {
             this.self.removeEventListener("message", this._msgListener);
             this._msgListener = noop;
         };
-        /** 注册监听事件
-         * @param {MessageType} type
-         * @param {HandlerFn} handler
-         */
         Server.prototype.listen = function (type, handler) {
             this.handlers.push(new Handler(type, handler));
         };
-        /** 接收事件信息并处理
-         * @param {MessageEvent} event
-         */
         Server.prototype._receiver = function (event) {
             return __awaiter(this, void 0, void 0, function () {
                 var _a, type, data, _id, req, res, handlers, index, next;
@@ -246,7 +233,6 @@
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            // eslint-disable-next-line no-debugger
                             debugger;
                             _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
                             req = new Request({ type: type, data: data, id: _id });
@@ -256,24 +242,35 @@
                             });
                             index = 0;
                             next = function () { return __awaiter(_this, void 0, void 0, function () {
-                                var handler;
+                                var handler, err_1;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
                                             handler = handlers[index++];
-                                            if (!handler) return [3 /*break*/, 2];
-                                            return [4 /*yield*/, handler.fn(req, res, next)];
+                                            if (!handler) return [3, 5];
+                                            _a.label = 1;
                                         case 1:
-                                            _a.sent(); // 执行完毕需要可以返回数据
-                                            _a.label = 2;
-                                        case 2: return [2 /*return*/];
+                                            _a.trys.push([1, 3, , 4]);
+                                            return [4, handler.fn(req, res, next)];
+                                        case 2:
+                                            _a.sent();
+                                            return [3, 4];
+                                        case 3:
+                                            err_1 = _a.sent();
+                                            this.errorHandler(err_1, req, res);
+                                            return [3, 4];
+                                        case 4: return [3, 6];
+                                        case 5:
+                                            this.notFoundErrorHandler(req, res);
+                                            _a.label = 6;
+                                        case 6: return [2];
                                     }
                                 });
                             }); };
-                            return [4 /*yield*/, next()];
+                            return [4, next()];
                         case 1:
                             _b.sent();
-                            return [2 /*return*/];
+                            return [2];
                     }
                 });
             });
@@ -281,7 +278,7 @@
         return Server;
     }());
 
-    var Client = /** @class */ (function () {
+    var Client = (function () {
         function Client(target, origin, option) {
             if (origin === void 0) { origin = "*"; }
             if (option === void 0) { option = {}; }
@@ -292,36 +289,23 @@
             this.tasks = Object.create(null);
             this._msgListener = noop;
             this.open();
-            // target 必须是带有原生window.postmessage方法
             if (!isNative(target.postMessage)) {
                 throw new TypeError("The first parameter must contain native `postMessage` method");
             }
         }
-        // 开启Client端监听
-        // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
         Client.prototype.open = function () {
             this._msgListener = this._receiver.bind(this);
             this.self.addEventListener("message", this._msgListener);
         };
-        // 关闭Client端监听
         Client.prototype.close = function () {
             this.self.removeEventListener("message", this._msgListener);
             this._msgListener = noop;
         };
-        /**触发监听，发布postmessage 事件
-         * @param {MessageType} type
-         * @param {any} data
-         * @param {string} origin
-         * @returns {Promise}  Promise 响应结果
-         */
         Client.prototype.request = function (type, data, origin) {
             debugger;
             var req = new Request({ type: type, data: data });
             return this._request(req, origin !== null && origin !== void 0 ? origin : this.origin);
         };
-        /** 处理request请求
-         * @param {Request} req
-         */
         Client.prototype._request = function (req, origin) {
             var _this = this;
             if (!Request.isRequest(req)) {
@@ -333,9 +317,6 @@
                 _this.tasks[req._id] = new Task(req, null, resolve, reject);
             });
         };
-        /**接收来自server的响应
-         * @param {MessageEvent} event
-         * */
         Client.prototype._receiver = function (event) {
             debugger;
             if (!Response.isResponse(event.data))
@@ -344,7 +325,7 @@
             var task = this.tasks[_id];
             if (!task)
                 return;
-            var res = new Response(event.data); // 根据接收信息生成一个响应对象
+            var res = new Response(event.data);
             task.res = res;
             if (res.status === STATUS.success) {
                 task.resolve(res);

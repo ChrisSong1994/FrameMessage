@@ -11,17 +11,33 @@ export default class Responsable {
   }
 
   /**
-   * 响应客户端消息
+   * 操作成功响应客户端消息
    * @param data 相应数据
-   * @param isSuccess 是否成功标识
    */
-  respond(data: any, isSuccess: boolean | undefined) {
+  public success(data: any) {
     if (this.anwsered) return warn("this request has been anwsered");
 
     if (this.event.source) {
       const { type, _id } = this._request;
-      const status = isSuccess ? STATUS.success : STATUS.failure;
-      const res = new Response({ type, data, status, id: _id });
+      const res = new Response({ type, data, status: STATUS.success, id: _id });
+      debugger;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.event.source.postMessage(res, "*");
+      this.anwsered = true;
+    }
+  }
+
+  /**
+   * 操作失败响应客户端消息
+   * @param data 相应数据
+   */
+  public error(data: any) {
+    if (this.anwsered) return warn("this request has been anwsered");
+
+    if (this.event.source) {
+      const { type, _id } = this._request;
+      const res = new Response({ type, data, status: STATUS.failure, id: _id });
       debugger;
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

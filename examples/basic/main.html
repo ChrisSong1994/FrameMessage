@@ -29,11 +29,11 @@
       <div class="contain">
         <iframe
           id="child1"
-          src="http://127.0.0.1:8080/examples/basic/child1.html"
+          src="http://127.0.0.1:8081/examples/basic/child1.html"
         ></iframe>
         <iframe
           id="child2"
-          src="http://127.0.0.1:8080/examples/basic/child2.html"
+          src="http://127.0.0.1:8081/examples/basic/child2.html"
         ></iframe>
       </div>
     </div>
@@ -48,7 +48,7 @@
         console.log("response:", req, res, next);
 
         document.getElementById("main").style.background = req.data.color;
-        res.respond({ return: "CHANGE_BG_COLOR" });
+        res.success({ return: "CHANGE_BG_COLOR" });
         next();
       });
 
