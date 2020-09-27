@@ -1,8 +1,12 @@
 import { Self, MessageType, MessageListener, Next } from "./types";
-import { noop, isNative } from "./utils";
+import { noop, isNative, WILDCARD, filter, HAND_SHAKE } from "./utils";
 import { Request } from "./reaction";
 import Responsable from "./responsable";
 
+enum STATE {
+  open,
+  closed,
+}
 type HandlerFn = (req: Request, res: Responsable, next: Next) => Promise<any>;
 type ErrorHandler = (err: any, req: Request, res: Responsable) => void; // 错误处理
 type NotFoundErrorHandler = (req: Request, res: Responsable) => void; // 404 处理
@@ -13,7 +17,9 @@ interface ServerOption {
 
 // 执行函数
 class Handler {
-  constructor(public type: MessageType, public fn: HandlerFn) {
+  public type: MessageType;
+  public fn: HandlerFn;
+  constructor(type: MessageType, fn: HandlerFn) {
     this.type = type;
     this.fn = fn;
   }
@@ -34,6 +40,7 @@ const notFoundErrorHandler: NotFoundErrorHandler = (req, res) => {
 export default class Server {
   self: Self;
   handlers: Handler[];
+  state: STATE;
   errorHandler: ErrorHandler;
   private notFoundErrorHandler: NotFoundErrorHandler;
   private _msgListener: MessageListener;
@@ -41,6 +48,7 @@ export default class Server {
   constructor(option: ServerOption = {}) {
     this.self = option.self ?? self;
     this.handlers = []; // 执行函数集合
+    this.state = STATE.closed;
     this._msgListener = noop;
     this.errorHandler = option.errorHandler ?? defaultErrorHandler;
     this.notFoundErrorHandler = notFoundErrorHandler;
@@ -52,26 +60,52 @@ export default class Server {
     }
 
     this.open();
+    this._listenInternalType()
   }
 
   // 开启Server端监听
   open() {
+    if (this.state !== STATE.closed) return;
     this._msgListener = this._receiver.bind(this);
     this.self.addEventListener("message", this._msgListener);
+    this.state = STATE.open;
   }
 
   // 关闭Server端监听
   close() {
+    if (this.state === STATE.closed) return;
     this.self.removeEventListener("message", this._msgListener);
     this._msgListener = noop;
+    this.state = STATE.closed;
   }
 
   /** 注册监听事件
-   * @param {MessageType} type
+   * @param {MessageType | HandlerFn} type
    * @param {HandlerFn} handler
    */
-  public listen(type: MessageType, handler: HandlerFn) {
-    this.handlers.push(new Handler(type, handler));
+  public listen(type: MessageType, handler?: HandlerFn) {
+    if (handler) {
+      this.handlers.push(new Handler(type, handler));
+    } else if (typeof type === "function") {
+      this.handlers.push(new Handler(WILDCARD, type));
+    }
+  }
+
+  /**
+   * 取消事件监听
+   * @param {MessageType} type 事件类型
+   * @param {HandlerFn} handler? 处理器
+   */
+  public cancel(type: MessageType, handler: HandlerFn) {
+    if (typeof type === "function") {
+      handler = type;
+      type = WILDCARD;
+    }
+    if (type) {
+      this.handlers = handler
+        ? filter(this.handlers, (item) => item.fn !== handler)
+        : filter(this.handlers, (item) => item.type !== type);
+    }
   }
 
   /** 接收事件信息并处理
@@ -84,9 +118,7 @@ export default class Server {
     const req = new Request({ type, data, id: _id });
     const res = new Responsable(req, event);
 
-    const handlers = this.handlers.filter((handler) => {
-      return handler.type === type;
-    });
+    const handlers = filter(this.handlers, (item) => item.type === type);
 
     let index = 0;
     const next = async () => {
@@ -103,5 +135,12 @@ export default class Server {
     };
 
     await next();
+  }
+
+  // 监听内部事件
+  private _listenInternalType() {
+    this.listen(HAND_SHAKE, async (_req, res) => {
+      res.success(null);
+    });
   }
 }

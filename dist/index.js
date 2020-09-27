@@ -71,11 +71,13 @@
         }
     }
 
+    var WILDCARD = "*";
+    var HAND_SHAKE = "__FRAME_MESSAGE_HANDLE_SHAKE__";
     var isNative = function (fn) {
         return /\[native code\]/.test(fn.toString());
     };
-    function noop() { }
-    function warn() {
+    var noop = function () { };
+    var warn = function () {
         var _a;
         var log = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -83,10 +85,21 @@
         }
         var print = (_a = console.warn) !== null && _a !== void 0 ? _a : console.log;
         print.apply(void 0, log);
-    }
-    function generateUid() {
+    };
+    var generateUid = function () {
         return Number(Math.floor(Math.random() * 1000000) + Date.now()).toString(36);
-    }
+    };
+    var delay = function (timeout) {
+        return new Promise(function (resolve) { return setTimeout(resolve, timeout); });
+    };
+    var filter = function (arr, match) {
+        var result = [];
+        return arr.reduce(function (result, item) {
+            if (match(item))
+                result.push(item);
+            return result;
+        }, result);
+    };
 
     var STATUS;
     (function (STATUS) {
@@ -184,10 +197,13 @@
         return Responsable;
     }());
 
+    var STATE;
+    (function (STATE) {
+        STATE[STATE["open"] = 0] = "open";
+        STATE[STATE["closed"] = 1] = "closed";
+    })(STATE || (STATE = {}));
     var Handler = (function () {
         function Handler(type, fn) {
-            this.type = type;
-            this.fn = fn;
             this.type = type;
             this.fn = fn;
         }
@@ -207,6 +223,7 @@
             var _a, _b;
             this.self = (_a = option.self) !== null && _a !== void 0 ? _a : self;
             this.handlers = [];
+            this.state = STATE.closed;
             this._msgListener = noop;
             this.errorHandler = (_b = option.errorHandler) !== null && _b !== void 0 ? _b : defaultErrorHandler;
             this.notFoundErrorHandler = notFoundErrorHandler;
@@ -214,17 +231,40 @@
                 throw new TypeError("`self` parameter must contain native `postMessage` method");
             }
             this.open();
+            this._listenInternalType();
         }
         Server.prototype.open = function () {
+            if (this.state !== STATE.closed)
+                return;
             this._msgListener = this._receiver.bind(this);
             this.self.addEventListener("message", this._msgListener);
+            this.state = STATE.open;
         };
         Server.prototype.close = function () {
+            if (this.state === STATE.closed)
+                return;
             this.self.removeEventListener("message", this._msgListener);
             this._msgListener = noop;
+            this.state = STATE.closed;
         };
         Server.prototype.listen = function (type, handler) {
-            this.handlers.push(new Handler(type, handler));
+            if (handler) {
+                this.handlers.push(new Handler(type, handler));
+            }
+            else if (typeof type === "function") {
+                this.handlers.push(new Handler(WILDCARD, type));
+            }
+        };
+        Server.prototype.cancel = function (type, handler) {
+            if (typeof type === "function") {
+                handler = type;
+                type = WILDCARD;
+            }
+            if (type) {
+                this.handlers = handler
+                    ? filter(this.handlers, function (item) { return item.fn !== handler; })
+                    : filter(this.handlers, function (item) { return item.type !== type; });
+            }
         };
         Server.prototype._receiver = function (event) {
             return __awaiter(this, void 0, void 0, function () {
@@ -237,9 +277,7 @@
                             _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
                             req = new Request({ type: type, data: data, id: _id });
                             res = new Responsable(req, event);
-                            handlers = this.handlers.filter(function (handler) {
-                                return handler.type === type;
-                            });
+                            handlers = filter(this.handlers, function (item) { return item.type === type; });
                             index = 0;
                             next = function () { return __awaiter(_this, void 0, void 0, function () {
                                 var handler, err_1;
@@ -275,46 +313,142 @@
                 });
             });
         };
+        Server.prototype._listenInternalType = function () {
+            var _this = this;
+            this.listen(HAND_SHAKE, function (_req, res) { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    res.success(null);
+                    return [2];
+                });
+            }); });
+        };
         return Server;
     }());
 
+    var STATE$1;
+    (function (STATE) {
+        STATE[STATE["notConnected"] = 0] = "notConnected";
+        STATE[STATE["connecting"] = 1] = "connecting";
+        STATE[STATE["connected"] = 2] = "connected";
+        STATE[STATE["closed"] = 3] = "closed";
+    })(STATE$1 || (STATE$1 = {}));
     var Client = (function () {
         function Client(target, origin, option) {
             if (origin === void 0) { origin = "*"; }
             if (option === void 0) { option = {}; }
-            var _a;
+            var _a, _b;
             this.target = target;
             this.origin = origin;
-            this.self = (_a = option.self) !== null && _a !== void 0 ? _a : self;
+            this.timeout = (_a = option.timeout) !== null && _a !== void 0 ? _a : 5000;
+            this.self = (_b = option.self) !== null && _b !== void 0 ? _b : self;
+            this.state = STATE$1.closed;
             this.tasks = Object.create(null);
             this._msgListener = noop;
-            this.open();
+            this._connector = null;
             if (!isNative(target.postMessage)) {
                 throw new TypeError("The first parameter must contain native `postMessage` method");
             }
+            this.open();
         }
         Client.prototype.open = function () {
+            if (this.state !== STATE$1.closed)
+                return;
+            this.state = STATE$1.notConnected;
             this._msgListener = this._receiver.bind(this);
             this.self.addEventListener("message", this._msgListener);
         };
         Client.prototype.close = function () {
+            if (this.state === STATE$1.closed)
+                return;
             this.self.removeEventListener("message", this._msgListener);
             this._msgListener = noop;
+            this.state = STATE$1.closed;
+        };
+        Client.prototype.connect = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    if (this.state === STATE$1.closed) {
+                        return [2, Promise.reject("The client is closed and needs to be reopened")];
+                    }
+                    if (this.state === STATE$1.notConnected) {
+                        this._connector = new Promise(function (resolve, reject) {
+                            var onConnected = function () {
+                                _this.state = STATE$1.connected;
+                                resolve();
+                            };
+                            var onError = function (error) {
+                                _this.state = STATE$1.notConnected;
+                                reject(error);
+                            };
+                            var request = new Request({ type: HAND_SHAKE });
+                            return _this._requestRetry(request).then(onConnected, onError);
+                        });
+                    }
+                    return [2, this._connector];
+                });
+            });
         };
         Client.prototype.request = function (type, data, origin) {
-            debugger;
-            var req = new Request({ type: type, data: data });
-            return this._request(req, origin !== null && origin !== void 0 ? origin : this.origin);
+            return __awaiter(this, void 0, void 0, function () {
+                var req;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            debugger;
+                            if (this.state === STATE$1.closed) {
+                                return [2, Promise.reject("The client is closed and needs to be reopened")];
+                            }
+                            if (typeof type !== "string") {
+                                throw new TypeError("type must be a string");
+                            }
+                            if (!(this.state === STATE$1.notConnected)) return [3, 2];
+                            return [4, this.connect()];
+                        case 1:
+                            _a.sent();
+                            _a.label = 2;
+                        case 2:
+                            if (!(this.state === STATE$1.connecting)) return [3, 4];
+                            return [4, this._connector];
+                        case 3:
+                            _a.sent();
+                            _a.label = 4;
+                        case 4:
+                            req = new Request({ type: type, data: data });
+                            return [2, this._request(req, this.timeout, origin !== null && origin !== void 0 ? origin : this.origin)];
+                    }
+                });
+            });
         };
-        Client.prototype._request = function (req, origin) {
+        Client.prototype.removeTask = function (id) {
+            Reflect.deleteProperty(this.tasks, id);
+        };
+        Client.prototype._request = function (req, timeout, origin) {
             var _this = this;
+            if (timeout === void 0) { timeout = this.timeout; }
+            if (origin === void 0) { origin = this.origin; }
             if (!Request.isRequest(req)) {
                 warn("The return value of requestInterceptor must be a valid request");
                 return Promise.reject(req);
             }
             return new Promise(function (resolve, reject) {
+                var timer = setTimeout(function () {
+                    reject("timeout");
+                }, timeout);
+                var cleanup = function () {
+                    clearTimeout(timer);
+                    _this.removeTask(req._id);
+                };
+                var fulfilled = function (res) {
+                    resolve(res);
+                    cleanup();
+                };
+                var rejected = function (reason) {
+                    reject(reason);
+                    cleanup();
+                };
                 _this.target.postMessage(req, origin);
-                _this.tasks[req._id] = new Task(req, null, resolve, reject);
+                _this.tasks[req._id] = new Task(req, null, fulfilled, rejected);
             });
         };
         Client.prototype._receiver = function (event) {
@@ -333,6 +467,43 @@
             else {
                 task.reject(res);
             }
+        };
+        Client.prototype._requestRetry = function (req, timeout, count, interval) {
+            if (timeout === void 0) { timeout = 1000; }
+            if (count === void 0) { count = 3; }
+            if (interval === void 0) { interval = 500; }
+            return __awaiter(this, void 0, void 0, function () {
+                var i, time, e_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            i = 0;
+                            _a.label = 1;
+                        case 1:
+                            if (!(i < count)) return [3, 7];
+                            time = i * interval;
+                            if (!(time > 0)) return [3, 3];
+                            return [4, delay(time)];
+                        case 2:
+                            _a.sent();
+                            _a.label = 3;
+                        case 3:
+                            _a.trys.push([3, 5, , 6]);
+                            return [4, this._request(req, timeout)];
+                        case 4: return [2, _a.sent()];
+                        case 5:
+                            e_1 = _a.sent();
+                            if (i === count - 1) {
+                                return [2, Promise.reject(e_1)];
+                            }
+                            return [3, 6];
+                        case 6:
+                            i++;
+                            return [3, 1];
+                        case 7: return [2];
+                    }
+                });
+            });
         };
         return Client;
     }());

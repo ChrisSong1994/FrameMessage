@@ -15,7 +15,7 @@ import { Server } from "framemessage";
 const server = new Server();
 server.listen("CHANGE_BG_COLOR", (req, res, next) => {
   const { data, type } = req;
-  res.respond({ return: "CHANGE_BG_COLOR" });
+  res.respond({ "CHANGE_BG_COLOR" });
   next();
 });
 ```
@@ -34,12 +34,7 @@ client
   });
 ```
 
-
 **错误处理**
-
-
-
-
 
 ### Api
 
@@ -49,18 +44,17 @@ client
   - **self:** [可选]指定服务端窗口
   - **errorHandler:** [可选]自定义错误执行函数
 
-
-
-
-
-
-
-
-
-
 **客户端 Client**
 
 - **target:** 服务端窗口
 - **origin:** 对应窗口资源地址
 - **option:**
   - **self:** 客户端窗口，默认 window
+
+### 接口规范
+
+
+
+### 待完善
+
+- 1.规范接口传参和数据返回格式
