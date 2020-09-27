@@ -1,4 +1,5 @@
-import { Request, Response, STATUS } from "./reaction";
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { Request, Response } from "./reaction";
 import { warn } from "./utils";
 
 // Server端响应
@@ -15,13 +16,15 @@ export default class Responsable {
    * @param data 相应数据
    */
   public success(data: any) {
-    if (this.anwsered) return warn("this request has been anwsered");
+    debugger;
+    if (this.anwsered) {
+      return warn("this request has been anwsered");
+    }
 
     if (this.event.source) {
       const { type, _id } = this._request;
-      const res = new Response({ type, data, status: STATUS.success, id: _id });
+      const res = new Response({ type, data, id: _id });
       debugger;
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.event.source.postMessage(res, "*");
       this.anwsered = true;
@@ -33,13 +36,14 @@ export default class Responsable {
    * @param data 相应数据
    */
   public error(data: any) {
-    if (this.anwsered) return warn("this request has been anwsered");
+    if (this.anwsered) {
+      return warn("this request has been anwsered");
+    }
 
     if (this.event.source) {
       const { type, _id } = this._request;
-      const res = new Response({ type, data, status: STATUS.failure, id: _id });
+      const res = new Response({ type, data, error: true, id: _id });
       debugger;
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.event.source.postMessage(res, "*");
       this.anwsered = true;

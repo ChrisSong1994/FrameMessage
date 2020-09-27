@@ -34,7 +34,7 @@ const defaultErrorHandler: ErrorHandler = (err, _req, res) => {
 
 // 404 失败执行函数
 const notFoundErrorHandler: NotFoundErrorHandler = (req, res) => {
-  res.error(`the type of ${req.data.type} has not been found`);
+  res.error(`the type of ${req.type} has not been found`);
 };
 
 export default class Server {
@@ -60,7 +60,7 @@ export default class Server {
     }
 
     this.open();
-    this._listenInternalType()
+    this._listenInternalType();
   }
 
   // 开启Server端监听
@@ -113,8 +113,8 @@ export default class Server {
    */
   private async _receiver(event: MessageEvent) {
     // eslint-disable-next-line no-debugger
-    debugger;
     const { type, data, _id } = event.data;
+    if (type === "webpackOk") return;
     const req = new Request({ type, data, id: _id });
     const res = new Responsable(req, event);
 

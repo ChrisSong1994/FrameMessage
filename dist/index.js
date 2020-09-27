@@ -101,11 +101,6 @@
         }, result);
     };
 
-    var STATUS;
-    (function (STATUS) {
-        STATUS["success"] = "success";
-        STATUS["failure"] = "failure";
-    })(STATUS || (STATUS = {}));
     var REACTION_TYPE;
     (function (REACTION_TYPE) {
         REACTION_TYPE["request"] = "reaction_request";
@@ -140,9 +135,9 @@
     var Response = (function (_super) {
         __extends(Response, _super);
         function Response(_a) {
-            var type = _a.type, id = _a.id, data = _a.data, status = _a.status;
+            var type = _a.type, id = _a.id, data = _a.data, error = _a.error;
             var _this = _super.call(this, REACTION_TYPE.response, id, type, data) || this;
-            _this.status = status !== null && status !== void 0 ? status : STATUS.success;
+            _this.error = error !== null && error !== void 0 ? error : false;
             return _this;
         }
         Response.isResponse = function (res) {
@@ -173,22 +168,25 @@
             this.anwsered = false;
         }
         Responsable.prototype.success = function (data) {
-            if (this.anwsered)
+            debugger;
+            if (this.anwsered) {
                 return warn("this request has been anwsered");
+            }
             if (this.event.source) {
                 var _a = this._request, type = _a.type, _id = _a._id;
-                var res = new Response({ type: type, data: data, status: STATUS.success, id: _id });
+                var res = new Response({ type: type, data: data, id: _id });
                 debugger;
                 this.event.source.postMessage(res, "*");
                 this.anwsered = true;
             }
         };
         Responsable.prototype.error = function (data) {
-            if (this.anwsered)
+            if (this.anwsered) {
                 return warn("this request has been anwsered");
+            }
             if (this.event.source) {
                 var _a = this._request, type = _a.type, _id = _a._id;
-                var res = new Response({ type: type, data: data, status: STATUS.failure, id: _id });
+                var res = new Response({ type: type, data: data, error: true, id: _id });
                 debugger;
                 this.event.source.postMessage(res, "*");
                 this.anwsered = true;
@@ -215,7 +213,7 @@
         }
     };
     var notFoundErrorHandler = function (req, res) {
-        res.error("the type of " + req.data.type + " has not been found");
+        res.error("the type of " + req.type + " has not been found");
     };
     var Server = (function () {
         function Server(option) {
@@ -273,8 +271,9 @@
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            debugger;
                             _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
+                            if (type === "webpackOk")
+                                return [2];
                             req = new Request({ type: type, data: data, id: _id });
                             res = new Responsable(req, event);
                             handlers = filter(this.handlers, function (item) { return item.type === type; });
@@ -452,7 +451,6 @@
             });
         };
         Client.prototype._receiver = function (event) {
-            debugger;
             if (!Response.isResponse(event.data))
                 return;
             var _id = event.data._id;
@@ -461,11 +459,11 @@
                 return;
             var res = new Response(event.data);
             task.res = res;
-            if (res.status === STATUS.success) {
-                task.resolve(res);
+            if (res.error) {
+                task.reject(res);
             }
             else {
-                task.reject(res);
+                task.resolve(res);
             }
         };
         Client.prototype._requestRetry = function (req, timeout, count, interval) {
@@ -473,7 +471,7 @@
             if (count === void 0) { count = 3; }
             if (interval === void 0) { interval = 500; }
             return __awaiter(this, void 0, void 0, function () {
-                var i, time, e_1;
+                var i, time, err_1, type, _id;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -492,9 +490,15 @@
                             return [4, this._request(req, timeout)];
                         case 4: return [2, _a.sent()];
                         case 5:
-                            e_1 = _a.sent();
+                            err_1 = _a.sent();
                             if (i === count - 1) {
-                                return [2, Promise.reject(e_1)];
+                                type = req.type, _id = req._id;
+                                return [2, Promise.reject(new Response({
+                                        type: type,
+                                        id: _id,
+                                        data: err_1,
+                                        error: true,
+                                    }))];
                             }
                             return [3, 6];
                         case 6:

@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import typescript from "rollup-plugin-typescript2";
 import { eslint } from "rollup-plugin-eslint";
+import strip from "@rollup/plugin-strip";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -8,7 +9,15 @@ console.log(isDev, process.env.NODE_ENV);
 
 const config = {
   input: "./src/index.ts",
-  plugins: [eslint(), typescript({ useTsconfigDeclarationDir: !isDev })],
+  plugins: [
+    strip({
+      debugger: true,
+      functions: ["console.log", "assert.*", "debug", "alert"],
+      sourceMap: true,
+    }),
+    eslint(),
+    typescript({ useTsconfigDeclarationDir: !isDev }),
+  ],
   watch: {
     include: "src/**",
   },
@@ -33,4 +42,4 @@ const esm = {
   },
 };
 
-export default isDev ? umd : [umd, esm];
+export default isDev ? [umd, esm] : [umd, esm];

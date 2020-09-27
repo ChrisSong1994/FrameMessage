@@ -1,10 +1,6 @@
 import { TaskId } from "./types";
 import { generateUid } from "./utils";
 
-export enum STATUS {
-  success = "success",
-  failure = "failure",
-}
 
 enum REACTION_TYPE {
   request = "reaction_request",
@@ -44,15 +40,15 @@ export class Request extends Reaction {
 }
 
 interface ResponseOptions extends RequestOption {
-  status?: STATUS;
+  error?: boolean;
 }
 
 // 响应返回
 export class Response extends Reaction {
-  status: STATUS;
-  constructor({ type, id, data, status }: ResponseOptions) {
+  error: boolean;
+  constructor({ type, id, data, error }: ResponseOptions) {
     super(REACTION_TYPE.response, id, type as string, data);
-    this.status = status ?? STATUS.success;
+    this.error = error ?? false;
   }
 
   static isResponse(res: any) {

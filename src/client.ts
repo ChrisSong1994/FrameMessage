@@ -1,7 +1,7 @@
 /* eslint-disable no-debugger */
 import { Self, MessageType, MessageListener, TasksMap, TaskId } from "./types";
 import { isNative, warn, noop, delay, HAND_SHAKE } from "./utils";
-import { Request, Response, Task, STATUS } from "./reaction";
+import { Request, Response, Task } from "./reaction";
 
 type ClientOption = {
   self?: Self;
@@ -167,7 +167,7 @@ export default class Client {
    * @param {MessageEvent} event
    * */
   private _receiver(event: MessageEvent) {
-    debugger;
+
     if (!Response.isResponse(event.data)) return;
     const { _id } = event.data;
     const task = this.tasks[_id];
@@ -175,10 +175,10 @@ export default class Client {
 
     const res = new Response(event.data); // 根据接收信息生成一个响应对象
     task.res = res;
-    if (res.status === STATUS.success) {
-      task.resolve(res);
-    } else {
+    if (res.error) {
       task.reject(res);
+    } else {
+      task.resolve(res);
     }
   }
 
@@ -203,10 +203,18 @@ export default class Client {
 
       try {
         return await this._request(req, timeout);
-      } catch (e) {
+      } catch (err) {
         // 重试完毕后取最后一次错误信息
         if (i === count - 1) {
-          return Promise.reject(e);
+          const { type, _id } = req;
+          return Promise.reject(
+            new Response({
+              type,
+              id: _id,
+              data: err,
+              error: true,
+            })
+          );
         }
       }
     }

@@ -45,8 +45,8 @@ let config = {
     extensions: [".js", ".css", ".json"],
   },
   devServer: {
-    port: 7001, // 端口
-    open: false, // 自动打开浏览器
+    port: 7000, // 端口
+    open: true, // 自动打开浏览器
     hot: true, // 开启热更新
     overlay: true, // 浏览器页面上显示错误
     historyApiFallback: true,
