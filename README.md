@@ -1,13 +1,25 @@
 # FrameMessage
 
-基于`postmessage` 的 iframe 之间的通信方式的封装.
+基于`postmessage`的`iframe`应用之间的通信方式的封装,类似于`http`接口访问会数据返回形式。
 
-在以 iframe 为基础的微服务框架中，应用之间天然隔离，在需要通信的时候都会用到 `postMessage`技术来解决隔离和跨域带来的通信阻碍。但是 `postMessage` 过于简单，应用之间的通信内容和响应不规范，所以需要对 postMessage 的通信进行封装来去提高使用效率。
+在以`iframe`为基础的微服务框架中,应用之间天然隔离，在需要通信的时候都会用到`postMessage`技术来解决隔离和跨域带来的通信阻碍。但是`postMessage`过于简洁，应用之间的通信内容和响应不规范，所以需要对`postMessage`的通信进行封装来去提高使用效率。
 
 ### 使用
 
 **基本使用**
-`FrameMessage`把应用之间的通信像 http 一样分成服务端和客户端，服务端可以像写接口一样注册事件，客户端可以用 promise 的方式处理响应数据
+`framemessage`把应用之间的通信像`http`一样分成服务端和客户端，服务端可以像写接口一样注册事件，客户端可以用 promise 的方式处理响应数据
+**script 标签引入**
+
+```html
+<!-- 客户端 -->
+<script src="./framemessage.js"></script>
+<script>
+  const { Client } = window.frameMessage;
+  const client = new Client(window.parent);
+</script>
+```
+
+**esm 方式引入**
 
 ```js
 // 服务端
@@ -15,7 +27,7 @@ import { Server } from "framemessage";
 const server = new Server();
 server.listen("CHANGE_BG_COLOR", (req, res, next) => {
   const { data, type } = req;
-  res.respond({ "CHANGE_BG_COLOR" });
+  res.success({ color: "#ffffff" });
   next();
 });
 ```
@@ -25,7 +37,7 @@ server.listen("CHANGE_BG_COLOR", (req, res, next) => {
 import { Client } from "framemessage";
 const client = new Client(window.parent); // window.parent 指向服务端窗口
 client
-  .request("CHANGE_BG_COLOR", { color: "#FFE4B5" })
+  .request("CHANGE_BG_COLOR", { theme: "white" })
   .then((res) => {
     console.log(res);
   })
@@ -36,34 +48,88 @@ client
 
 **错误处理**
 
+- 1.客户端在发送请求后可以在`catch`内捕获错误信息,返回信息将符合接口格式规范。
+
+```js
+client
+  .request("GET_USER_INFO")
+  .then((res) => {
+    console.log(res);
+  })
+  .catch((data) => {
+    const { data, type, error } = data;
+    console.log(data, type, error);
+  });
+```
+
+- 2.服务端在响应请求时可在回调函数内调用`res.error(errData)`方式返回错误信息。
+
+```js
+server.listen("GET_USER_INFO", (req, res, next) => {
+  const { data, type } = req;
+  res.error("sorry, you have not the authority to get userInfo!");
+  next();
+});
+```
+
+**错误信息**
+
+- 1.客户端请求连接失败：客户端在第一次请求时会尝试连接服务端，假如服务端没有开启或者没有实例化服务端，客户端将会默认尝试三次请求连接后抛出`timeout`错误
+
 ### Api
 
-**服务端 Server**
+#### Server 类
 
 - **_option:_**
   - **self:** [可选]指定服务端窗口
   - **errorHandler:** [可选]自定义错误执行函数
 
-**客户端 Client**
+#### 服务端 Server 实例
+
+**_方法：_**
+
+- `listen()`：注册监听事件类型
+
+  - `type`:[string] 监听事件类型
+  - `callback()`:监听事件触发回调函数
+    - `req`:请求对象
+    - `res`:请求返回对象
+      - `sucess()`:请求成功调用
+      - `error()`:请求失败调用
+    - `next()`:调用下个此事件类型的回调
+
+- `close()`:取消注册事件类型
+  - `type`:[string] 监听事件类型
+  - `callbackName`:监听事件触发回调函数
+
+#### 客户端 Client 类
 
 - **target:** 服务端窗口
 - **origin:** 对应窗口资源地址
 - **option:**
   - **self:** 客户端窗口，默认 window
 
+#### 客户端 Client 实例
+**_方法：_**
+
+- `request()`：发起事件请求，将返回一个 Promise 对象
+
+  - `type`:[string] 事件类型
+  - `data`:[onject] 请求参数
+
 ### 接口规范
 
 接口返回格式
 
-```js
+```json
 {
+  error: boolean; // 返回状态 true：返回错误  false：返回成功
   data: any; // 返回内容
-  error: boolean; // 返回状态
   type: string; // 返回请求接口类型
 }
 ```
 
 ### 待完善
 
-- 1.示例中有显示跨域问题
-- 2.文档待完善
+- 1.文档待完善
+- 2.完善测试用例

@@ -18,7 +18,7 @@
     <button onclick="handleChangeTheme()">错误请求</button>
     <script src="../../dist/index.js"></script>
     <script>
-      const { Client, Server } = frameMessage;
+      const { Client, Server } = window.frameMessage;
       const client = new Client(window.parent);
 
       function handleChangeTheme() {
