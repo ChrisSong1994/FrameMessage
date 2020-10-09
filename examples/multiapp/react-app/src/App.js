@@ -2,24 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Client, Server } from "../../../../es";
 
 const App = () => {
-  const [client, setClient] = useState(new Client(window.parent));
-  const [server, setServer] = useState(new Server());
-  const [theme, setTheme] = useState("#ffffff");
-
-  useEffect(() => {
-    server.listen("CHANGE_THEME", (req, res, next) => {
-      console.log(req.data.theme)
-      setTheme(req.data.theme);
-    });
-
-    return () => server.close();
-  });
+  const [client, setClient] = useState(
+    new Client(window.parent, "http://localhost:7000/")
+  );
+  const [userInfo, setUserInfo] = useState({});
 
   const getUserInfo = () => {
     client
-      .request("CHANGE_THEME", { color: "#FFE4B5" })
+      .request("GET_USER_INFO", { color: "#FFE4B5" })
       .then((res) => {
         console.log(res);
+        setUserInfo(res.data);
       })
       .catch((data) => {
         console.log(data);
@@ -27,9 +20,10 @@ const App = () => {
   };
 
   return (
-    <div className="App" style={{ background: theme }}>
+    <div className="App" style={{ background: "#ffffff" }}>
       <h1>react-app</h1>
       <button onClick={getUserInfo}>获取用户信息</button>
+      <div>{JSON.stringify(userInfo)} </div>
     </div>
   );
 };

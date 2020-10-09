@@ -7,49 +7,49 @@ const appsInfo = [
     name: "react-app",
     origin: "http://localhost:7001/",
   },
-  // {
-  //   id: "vue-app",
-  //   name: "vue-app",
-  //   origin: "http://localhost:7002/",
-  // },
+  {
+    id: "vue-app",
+    name: "vue-app",
+    origin: "http://localhost:7002/",
+  },
 ];
 
 const colors = ["#F5222D", "#FFC0CB", "#6495ED", "#D4F2E7", "#FFD700"];
 
 const App = () => {
   const [userInfo, setUserInfo] = useState({ name: "chrissong" });
-  const [childrenWindow, setChildrenWindow] = useState([]);
+  const [theme, setTheme] = useState('#ffffff');
+
+
+
   useEffect(() => {
-    const windows = [];
-    for (let app of appsInfo) {
-      windows.push(document.getElementById(app.id).contentWindow);
-    }
-    debugger;
-    setChildrenWindow(windows);
+    // const windows = [];
+    // for (let app of appsInfo) {
+    //   windows.push(document.getElementById(app.id).contentWindow);
+    // }
+    // setChildrenWindow(windows);
+
+    const server = new Server();
+    server.listen("GET_USER_INFO", (req, res, next) => {
+      debugger;
+      res.success({ userInfo });
+      next();
+    });
+
+    server.listen("GET_THEME_INFO", (req, res, next) => {
+      debugger;
+      res.success({ theme });
+      next();
+    });
   }, []);
 
-  const changeTheme = (theme) => {
-    for (let clientWindow of childrenWindow) {
-      const client = new Client(clientWindow);
-      client
-        .request("CHANGE_THEME", { theme })
-        .then((res) => {
-          debugger;
-          console.log(res);
-        })
-        .catch((data) => {
-          debugger;
-          console.log(data);
-        });
-    }
-  };
 
   const changeUserInfo = (key, value) => {
     setUserInfo({ [key]: value });
   };
 
   return (
-    <div className="App">
+    <div className="App" style={{background:theme}}>
       <header>
         <div>
           <label htmlFor="name">用户名:</label>
@@ -78,7 +78,7 @@ const App = () => {
                     margin: "0 2px",
                     cursor: "pointer",
                   }}
-                  onClick={() => changeTheme(color)}
+                  onClick={() => setTheme(color)}
                 ></span>
               );
             })}

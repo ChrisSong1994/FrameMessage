@@ -112,7 +112,7 @@ export default class Server {
    * @param {MessageEvent} event
    */
   private async _receiver(event: MessageEvent) {
-    // eslint-disable-next-line no-debugger
+    if(!Request.isRequest(event.data)) return
     const { type, data, _id } = event.data;
     if (type === "webpackOk") return;
     const req = new Request({ type, data, id: _id });
@@ -123,6 +123,7 @@ export default class Server {
     let index = 0;
     const next = async () => {
       const handler = handlers[index++];
+      debugger
       if (handler) {
         try {
           await handler.fn(req, res, next); // 执行完毕需要可以返回数据

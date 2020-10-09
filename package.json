@@ -1,7 +1,7 @@
 {
   "name": "@chrissong/framemessage",
   "version": "0.0.1",
-  "description": "iframe message better ",
+  "description": "iframe message",
   "main": "dist/index.js",
   "files": [
     "dist",

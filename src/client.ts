@@ -136,6 +136,7 @@ export default class Client {
       warn("The return value of requestInterceptor must be a valid request");
       return Promise.reject(req);
     }
+    debugger
     return new Promise((resolve, reject) => {
       // 设置超时返回
       const timer = setTimeout(() => {
