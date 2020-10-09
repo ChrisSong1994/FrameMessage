@@ -43,7 +43,6 @@ export default class Responsable {
     if (this.event.source) {
       const { type, _id } = this._request;
       const res = new Response({ type, data, error: true, id: _id });
-      debugger;
       // @ts-ignore
       this.event.source.postMessage(res, "*");
       this.anwsered = true;

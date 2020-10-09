@@ -187,7 +187,6 @@
             if (this.event.source) {
                 var _a = this._request, type = _a.type, _id = _a._id;
                 var res = new Response({ type: type, data: data, error: true, id: _id });
-                debugger;
                 this.event.source.postMessage(res, "*");
                 this.anwsered = true;
             }
@@ -271,6 +270,8 @@
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
+                            if (!Request.isRequest(event.data))
+                                return [2];
                             _a = event.data, type = _a.type, data = _a.data, _id = _a._id;
                             if (type === "webpackOk")
                                 return [2];
@@ -284,6 +285,7 @@
                                     switch (_a.label) {
                                         case 0:
                                             handler = handlers[index++];
+                                            debugger;
                                             if (!handler) return [3, 5];
                                             _a.label = 1;
                                         case 1:
@@ -430,6 +432,7 @@
                 warn("The return value of requestInterceptor must be a valid request");
                 return Promise.reject(req);
             }
+            debugger;
             return new Promise(function (resolve, reject) {
                 var timer = setTimeout(function () {
                     reject("timeout");
@@ -518,4 +521,3 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=index.js.map
