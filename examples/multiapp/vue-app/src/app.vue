@@ -6,7 +6,7 @@
   </div>
 </template>
 <script>
-import { Client } from "../../../../es";
+import { Client } from "../../../../dist";
 export default {
   name: "app",
   data() {

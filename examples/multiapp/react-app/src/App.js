@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Client, Server } from "../../../../es";
+import { Client, Server } from "../../../../dist";
 
 const App = () => {
   const [client, setClient] = useState(
