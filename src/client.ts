@@ -1,4 +1,3 @@
-/* eslint-disable no-debugger */
 import { Self, MessageType, MessageListener, TasksMap, TaskId } from "./types";
 import { isNative, warn, noop, delay, HAND_SHAKE } from "./utils";
 import { Request, Response, Task } from "./reaction";
@@ -48,7 +47,7 @@ export default class Client {
 
   // 开启Client端监听
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  open() {
+  public open() {
     if (this.state !== STATE.closed) return;
     this.state = STATE.notConnected;
     this._msgListener = this._receiver.bind(this);
@@ -56,7 +55,7 @@ export default class Client {
   }
 
   // 关闭Client端监听
-  close() {
+  public close() {
     if (this.state === STATE.closed) return;
     this.self.removeEventListener("message", this._msgListener);
     this._msgListener = noop;
@@ -96,8 +95,11 @@ export default class Client {
    * @param {string} origin
    * @returns {Promise}  Promise 响应结果
    */
-  async request(type: MessageType, data: any, origin?: string): Promise<any> {
-    debugger;
+  public async request(
+    type: MessageType,
+    data: any,
+    origin?: string
+  ): Promise<any> {
     if (this.state === STATE.closed) {
       return Promise.reject("The client is closed and needs to be reopened");
     }
@@ -122,7 +124,7 @@ export default class Client {
    * 移除任务
    * @param id
    */
-  removeTask(id: TaskId) {
+  private removeTask(id: TaskId) {
     Reflect.deleteProperty(this.tasks, id);
   }
 
@@ -136,7 +138,6 @@ export default class Client {
       warn("The return value of requestInterceptor must be a valid request");
       return Promise.reject(req);
     }
-    debugger
     return new Promise((resolve, reject) => {
       // 设置超时返回
       const timer = setTimeout(() => {
@@ -168,7 +169,6 @@ export default class Client {
    * @param {MessageEvent} event
    * */
   private _receiver(event: MessageEvent) {
-
     if (!Response.isResponse(event.data)) return;
     const { _id } = event.data;
     const task = this.tasks[_id];

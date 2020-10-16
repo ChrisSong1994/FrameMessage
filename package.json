@@ -1,15 +1,14 @@
 {
-  "name": "@chrissong/framemessage",
+  "name": "@chrissong/frame-message",
   "version": "0.0.1",
   "description": "iframe message",
   "main": "dist/index.js",
   "files": [
-    "dist",
-    "es"
+    "dist"
   ],
   "scripts": {
     "dev": "npm run clean && rollup -w -c  --environment NODE_ENV:development",
-    "build": "npm run clean && rollup  -c  --environment NODE_ENV:production",
+    "build": "npm run clean && rollup  -c  --environment NODE_ENV:production && node publish.js",
     "example:basic": "hs --port 8000",
     "example:install": "npm-run-all --serial build install:*",
     "example:start": "npm-run-all --parallel start:*",
@@ -24,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/song111/FrameMessage.git"
+    "url": "https://git.shinemo.com/scm/xnpm/framemessage.git"
   },
   "keywords": [
     "iframe",
@@ -33,15 +32,12 @@
   ],
   "author": "chrissong",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/song111/FrameMessage/issues"
-  },
-  "homepage": "https://github.com/song111/FrameMessage#readme",
   "devDependencies": {
     "@rollup/plugin-strip": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^4.2.0",
     "@typescript-eslint/parser": "^4.2.0",
     "eslint": "^7.9.0",
+    "fs-extra": "^9.0.1",
     "http-server": "^0.12.3",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",

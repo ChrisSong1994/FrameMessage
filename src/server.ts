@@ -1,5 +1,5 @@
-import { Self, MessageType, MessageListener, Next } from "./types";
-import { noop, isNative, WILDCARD, filter, HAND_SHAKE } from "./utils";
+import { Self, MessageType, MessageListener } from "./types";
+import { noop, isNative, WILDCARD, HAND_SHAKE } from "./utils";
 import { Request } from "./reaction";
 import Responsable from "./responsable";
 
@@ -7,7 +7,8 @@ enum STATE {
   open,
   closed,
 }
-type HandlerFn = (req: Request, res: Responsable, next: Next) => Promise<any>;
+type HandlerFn = (req: Request, res: Responsable) => Promise<any>;
+type HandlerMap = Map<string, Handler>;
 type ErrorHandler = (err: any, req: Request, res: Responsable) => void; // 错误处理
 type NotFoundErrorHandler = (req: Request, res: Responsable) => void; // 404 处理
 interface ServerOption {
@@ -39,7 +40,7 @@ const notFoundErrorHandler: NotFoundErrorHandler = (req, res) => {
 
 export default class Server {
   self: Self;
-  handlers: Handler[];
+  handlerMap: HandlerMap;
   state: STATE;
   errorHandler: ErrorHandler;
   private notFoundErrorHandler: NotFoundErrorHandler;
@@ -47,7 +48,7 @@ export default class Server {
 
   constructor(option: ServerOption = {}) {
     this.self = option.self ?? self;
-    this.handlers = []; // 执行函数集合
+    this.handlerMap = new Map(); // 执行函数集合
     this.state = STATE.closed;
     this._msgListener = noop;
     this.errorHandler = option.errorHandler ?? defaultErrorHandler;
@@ -64,7 +65,7 @@ export default class Server {
   }
 
   // 开启Server端监听
-  open() {
+  public open() {
     if (this.state !== STATE.closed) return;
     this._msgListener = this._receiver.bind(this);
     this.self.addEventListener("message", this._msgListener);
@@ -72,7 +73,7 @@ export default class Server {
   }
 
   // 关闭Server端监听
-  close() {
+  public close() {
     if (this.state === STATE.closed) return;
     this.self.removeEventListener("message", this._msgListener);
     this._msgListener = noop;
@@ -84,58 +85,49 @@ export default class Server {
    * @param {HandlerFn} handler
    */
   public listen(type: MessageType, handler?: HandlerFn) {
+    // 一个事件监听只能注册一次
+    if (this.handlerMap.has(type)) {
+      throw new Error(`type ${type} has been listen`);
+    }
+
     if (handler) {
-      this.handlers.push(new Handler(type, handler));
+      this.handlerMap.set(type, new Handler(type, handler));
     } else if (typeof type === "function") {
-      this.handlers.push(new Handler(WILDCARD, type));
+      this.handlerMap.set(WILDCARD, new Handler(WILDCARD, type));
     }
   }
 
   /**
    * 取消事件监听
    * @param {MessageType} type 事件类型
-   * @param {HandlerFn} handler? 处理器
    */
-  public cancel(type: MessageType, handler: HandlerFn) {
+  public cancel(type: MessageType) {
     if (typeof type === "function") {
-      handler = type;
       type = WILDCARD;
     }
-    if (type) {
-      this.handlers = handler
-        ? filter(this.handlers, (item) => item.fn !== handler)
-        : filter(this.handlers, (item) => item.type !== type);
-    }
+    this.handlerMap.delete(type);
   }
 
   /** 接收事件信息并处理
    * @param {MessageEvent} event
    */
   private async _receiver(event: MessageEvent) {
-    if(!Request.isRequest(event.data)) return
+    if (!Request.isRequest(event.data)) return;
     const { type, data, _id } = event.data;
     if (type === "webpackOk") return;
     const req = new Request({ type, data, id: _id });
     const res = new Responsable(req, event);
+    const handler = this.handlerMap.get(type);
 
-    const handlers = filter(this.handlers, (item) => item.type === type);
-
-    let index = 0;
-    const next = async () => {
-      const handler = handlers[index++];
-      debugger
-      if (handler) {
-        try {
-          await handler.fn(req, res, next); // 执行完毕需要可以返回数据
-        } catch (err) {
-          this.errorHandler(err, req, res);
-        }
-      } else {
-        this.notFoundErrorHandler(req, res);
+    if (handler) {
+      try {
+        await handler.fn(req, res); // 执行完毕需要可以返回数据
+      } catch (err) {
+        this.errorHandler(err, req, res);
       }
-    };
-
-    await next();
+    } else {
+      this.notFoundErrorHandler(req, res);
+    }
   }
 
   // 监听内部事件

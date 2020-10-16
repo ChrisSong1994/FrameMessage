@@ -7,37 +7,41 @@
 ### 使用
 
 **基本使用**
-`framemessage`把应用之间的通信像`http`一样分成服务端和客户端，服务端可以像写接口一样注册事件，客户端可以用 promise 的方式处理响应数据
+`frameMessage`把应用之间的通信像`http`一样分成服务端和客户端，服务端可以像写接口一样注册事件，客户端可以用 promise 的方式处理响应数据
+
 **script 标签引入**
+在项目 dist 目录拿到 frameMessage.js 脚本文件
 
 ```html
-<!-- 客户端 -->
-<script src="./framemessage.js"></script>
+<script src="./frameMessage.js"></script>
 <script>
-  const { Client } = window.frameMessage;
-  const client = new Client(window.parent);
+  const { Client, Server } = window.frameMessage;
 </script>
 ```
 
 **esm 方式引入**
 
+```bash
+# 安装
+npm i @chrissong/frame-message --save
+```
+
 ```js
 // 服务端
-import { Server } from "framemessage";
+import { Server } from "@chrissong/frame-message";
 const server = new Server();
-server.listen("CHANGE_BG_COLOR", (req, res, next) => {
+server.listen("GET_THEME_COLOR", (req, res) => {
   const { data, type } = req;
   res.success({ color: "#ffffff" });
-  next();
 });
 ```
 
 ```js
 // 客户端
-import { Client } from "framemessage";
+import { Client } from "@chrissong/frame-message";
 const client = new Client(window.parent); // window.parent 指向服务端窗口
 client
-  .request("CHANGE_BG_COLOR", { theme: "white" })
+  .request("GET_THEME_COLOR", { theme: true })
   .then((res) => {
     console.log(res);
   })
@@ -51,8 +55,9 @@ client
 - 1.客户端在发送请求后可以在`catch`内捕获错误信息,返回信息将符合接口格式规范。
 
 ```js
+// GET_USER_INFO 事件类型在服务端未监听
 client
-  .request("GET_USER_INFO")
+  .request("GET_USER_INFO", { appid: "123" })
   .then((res) => {
     console.log(res);
   })
@@ -65,10 +70,9 @@ client
 - 2.服务端在响应请求时可在回调函数内调用`res.error(errData)`方式返回错误信息。
 
 ```js
-server.listen("GET_USER_INFO", (req, res, next) => {
+server.listen("GET_USER_INFO", (req, res) => {
   const { data, type } = req;
   res.error("sorry, you have not the authority to get userInfo!");
-  next();
 });
 ```
 
@@ -81,8 +85,8 @@ server.listen("GET_USER_INFO", (req, res, next) => {
 #### Server 类
 
 - **_option:_**
-  - **self:** [可选]指定服务端窗口
-  - **errorHandler:** [可选]自定义错误执行函数
+  - **self:** `[可选]`指定服务端窗口
+  - **errorHandler:** `[可选]`自定义错误执行函数
 
 #### 服务端 Server 实例
 
@@ -90,46 +94,44 @@ server.listen("GET_USER_INFO", (req, res, next) => {
 
 - `listen()`：注册监听事件类型
 
-  - `type`:[string] 监听事件类型
+  - `type`:`[string]` 监听事件类型
   - `callback()`:监听事件触发回调函数
     - `req`:请求对象
     - `res`:请求返回对象
       - `sucess()`:请求成功调用
       - `error()`:请求失败调用
-    - `next()`:调用下个此事件类型的回调
 
-- `close()`:取消注册事件类型
-  - `type`:[string] 监听事件类型
-  - `callbackName`:监听事件触发回调函数
+- `cancel()`:取消注册事件类型
+
+  - `type`:`[string]` 监听事件类型
+
+- `open()`:服务端监听开启
+
+- `close()`:服务端监听关闭
 
 #### 客户端 Client 类
 
 - **target:** 服务端窗口
-- **origin:** 对应窗口资源地址
-- **option:**
+- **origin:** `[可选]`对应窗口资源地址
+- **option:** `[可选]`
   - **self:** 客户端窗口，默认 window
 
 #### 客户端 Client 实例
+
 **_方法：_**
 
 - `request()`：发起事件请求，将返回一个 Promise 对象
 
-  - `type`:[string] 事件类型
-  - `data`:[onject] 请求参数
+  - `type`:`[string]` 事件类型
+  - `data`:`[object]` `[可选]` 请求参数
 
 ### 接口规范
 
-接口返回格式
-
-```json
+```js
+// 客户端接口调用返回数据格式
 {
   error: boolean; // 返回状态 true：返回错误  false：返回成功
   data: any; // 返回内容
   type: string; // 返回请求接口类型
 }
 ```
-
-### 待完善
-
-- 1.文档待完善
-- 2.完善测试用例
