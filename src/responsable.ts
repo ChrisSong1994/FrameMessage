@@ -16,15 +16,10 @@ export default class Responsable {
    * @param data 相应数据
    */
   public success(data: any) {
-    debugger;
-    if (this.anwsered) {
-      return warn("this request has been anwsered");
-    }
-
+    if (this.anwsered) return warn("this request has been anwsered");
     if (this.event.source) {
       const { type, _id } = this._request;
       const res = new Response({ type, data, id: _id });
-      debugger;
       // @ts-ignore
       this.event.source.postMessage(res, "*");
       this.anwsered = true;
@@ -36,9 +31,7 @@ export default class Responsable {
    * @param data 相应数据
    */
   public error(data: any) {
-    if (this.anwsered) {
-      return warn("this request has been anwsered");
-    }
+    if (this.anwsered) return warn("this request has been anwsered");
 
     if (this.event.source) {
       const { type, _id } = this._request;

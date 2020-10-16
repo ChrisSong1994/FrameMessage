@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Client, Server } from "../../../../dist";
+import { Server } from "../../../../dist";
 
 const appsInfo = [
   {
@@ -18,38 +18,32 @@ const colors = ["#F5222D", "#FFC0CB", "#6495ED", "#D4F2E7", "#FFD700"];
 
 const App = () => {
   const [userInfo, setUserInfo] = useState({ name: "chrissong" });
-  const [theme, setTheme] = useState('#ffffff');
-
-
+  const [theme, setTheme] = useState("#ffffff");
 
   useEffect(() => {
-    // const windows = [];
-    // for (let app of appsInfo) {
-    //   windows.push(document.getElementById(app.id).contentWindow);
-    // }
-    // setChildrenWindow(windows);
-
+    // 创建服务端
     const server = new Server();
-    server.listen("GET_USER_INFO", (req, res, next) => {
-      debugger;
+    // 可以注册两个类型，但是只会执行先返回的promise
+    server.listen("GET_USER_INFO", (req, res) => {
+      console.log(111);
       res.success({ userInfo });
-      next();
     });
 
-    server.listen("GET_THEME_INFO", (req, res, next) => {
-      debugger;
+    server.listen("GET_THEME_INFO", (req, res) => {
       res.success({ theme });
-      next();
     });
-  }, []);
-
+    return () => {
+      // 组件卸载需要关闭服务端
+      server.close();
+    };
+  }, [userInfo, theme]);
 
   const changeUserInfo = (key, value) => {
     setUserInfo({ [key]: value });
   };
 
   return (
-    <div className="App" style={{background:theme}}>
+    <div className="App" style={{ background: theme }}>
       <header>
         <div>
           <label htmlFor="name">用户名:</label>

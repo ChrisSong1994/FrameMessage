@@ -9,7 +9,7 @@ const App = () => {
 
   const getUserInfo = () => {
     client
-      .request("GET_USER_INFO", { color: "#FFE4B5" })
+      .request("GET_USER_INFO")
       .then((res) => {
         console.log(res);
         setUserInfo(res.data);
